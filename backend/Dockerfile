@@ -7,7 +7,7 @@ RUN npm install
 
 COPY . .
 
-RUN npx tsc -p tsconfig.json
+RUN npm install typescript --save-dev && npx tsc -p tsconfig.json
 
 EXPOSE 3300
 
