@@ -263,6 +263,15 @@ textarea:focus {
   transform: translateY(-1px);
 }
 
+.ghost-button:disabled,
+.primary-button:disabled,
+.danger-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.56;
+  transform: none;
+  filter: saturate(0.72);
+}
+
 .ghost-button {
   background: transparent;
   border: 1px solid var(--border);
@@ -325,6 +334,21 @@ textarea:focus {
 .notice-error {
   background: rgba(255, 95, 87, 0.14);
   border: 1px solid rgba(255, 95, 87, 0.2);
+}
+
+.policy-state-note {
+  margin: 18px 0 0;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(255, 95, 87, 0.1);
+  border: 1px solid rgba(255, 95, 87, 0.18);
+  color: #ffd7d2;
+}
+
+.field-hint {
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .page-grid {

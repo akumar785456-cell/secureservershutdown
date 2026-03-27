@@ -464,6 +464,12 @@ export default function App() {
                 Apply or clear the internal access policy for the main workspace from this panel.
               </p>
 
+              {overview.shutdown.shutdownActive && (
+                <div className="policy-state-note">
+                  Access is currently limited. Restore access from this panel when you're ready.
+                </div>
+              )}
+
               <label className="field">
                 <span>Internal note</span>
                 <textarea
@@ -471,7 +477,11 @@ export default function App() {
                   onChange={(event) => setReason(event.target.value)}
                   placeholder="Add a short note for this change."
                   rows={4}
+                  disabled={actionBusy || overview.shutdown.shutdownActive}
                 />
+                {overview.shutdown.shutdownActive && (
+                  <small className="field-hint">The current note is locked while this policy is active.</small>
+                )}
               </label>
 
               <div className="action-row">
@@ -480,7 +490,11 @@ export default function App() {
                   onClick={activate}
                   disabled={actionBusy || overview.shutdown.shutdownActive}
                 >
-                  {actionBusy ? "Applying..." : "Limit access"}
+                  {actionBusy
+                    ? "Applying..."
+                    : overview.shutdown.shutdownActive
+                      ? "Access limited"
+                      : "Limit access"}
                 </button>
                 <button
                   className="primary-button secondary"
