@@ -50,12 +50,22 @@ const formatDateTime = (value: string | null) => {
 const hiddenCommands = [
   {
     id: "shutdown",
-    label: "Shutdown Control",
+    label: "Access Review",
     page: "shutdown" as const,
-    description: "Open the emergency shutdown page",
+    description: "Open internal workspace settings",
     keywords: ["shutdown", "server off", "turn off", "offline", "power", "disable"]
   }
 ];
+
+const formatEventAction = (action: string) => {
+  if (action === "emergency.shutdown.activate") {
+    return "Access limited";
+  }
+  if (action === "emergency.shutdown.deactivate") {
+    return "Access restored";
+  }
+  return action;
+};
 
 export default function App() {
   const [page, setPage] = useState<Page>(() => readPageFromHash());
@@ -68,7 +78,7 @@ export default function App() {
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loginBusy, setLoginBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
-  const [reason, setReason] = useState("Emergency shutdown requested.");
+  const [reason, setReason] = useState("Temporary access review.");
   const [actionBusy, setActionBusy] = useState(false);
 
   const searchResults = useMemo(() => {
@@ -79,6 +89,21 @@ export default function App() {
         value.toLowerCase().includes(query)
       )
     );
+  }, [searchQuery]);
+
+  useEffect(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return;
+
+    const exactMatch = hiddenCommands.find((command) =>
+      [command.id, command.label, command.description, ...command.keywords].some(
+        (value) => value.toLowerCase() === query
+      )
+    );
+
+    if (exactMatch) {
+      openHiddenCommand(exactMatch.page);
+    }
   }, [searchQuery]);
 
   const refreshOverview = async (token: string) => {
@@ -193,10 +218,10 @@ export default function App() {
           : prev
       );
       await refreshOverview(session.accessToken);
-      setMessage("Emergency shutdown is now active across the main system.");
+      setMessage("Restricted access is now active.");
       setPage("shutdown");
     } catch (error: any) {
-      setMessage(error?.message ?? "Could not activate shutdown.");
+      setMessage(error?.message ?? "Could not save this access change.");
     } finally {
       setActionBusy(false);
     }
@@ -214,27 +239,27 @@ export default function App() {
           : prev
       );
       await refreshOverview(session.accessToken);
-      setMessage("Emergency shutdown has been cleared. The main system can accept traffic again.");
+      setMessage("Normal access has been restored.");
       setPage("overview");
     } catch (error: any) {
-      setMessage(error?.message ?? "Could not restore the system.");
+      setMessage(error?.message ?? "Could not restore access.");
     } finally {
       setActionBusy(false);
     }
   };
 
   if (bootstrapping) {
-    return <div className="loading-screen">Loading emergency control...</div>;
+    return <div className="loading-screen">Loading workspace...</div>;
   }
 
   if (!session) {
     return (
       <div className="login-shell">
         <div className="login-panel">
-          <div className="eyebrow">Emergency Control</div>
-          <h1>Break-glass access</h1>
+          <div className="eyebrow">Workspace Console</div>
+          <h1>Storage insights</h1>
           <p className="lead">
-            Sign in with your mobile number and password to access the separate shutdown console.
+            Sign in with your mobile number and password to review protected workspace data.
           </p>
           <form className="login-form" onSubmit={handleLogin}>
             <label>
@@ -260,7 +285,7 @@ export default function App() {
             </label>
             {loginError && <div className="notice notice-error">{loginError}</div>}
             <button className="primary-button" type="submit" disabled={loginBusy}>
-              {loginBusy ? "Signing in..." : "Open control room"}
+              {loginBusy ? "Signing in..." : "Open workspace"}
             </button>
           </form>
         </div>
@@ -275,13 +300,13 @@ export default function App() {
           <div className="brand-mark" />
           <div>
             <div className="brand-title">Sentinel</div>
-            <div className="brand-subtitle">Emergency control room</div>
+            <div className="brand-subtitle">Storage operations</div>
           </div>
         </div>
 
         <div className="search-block">
           <label className="search-label" htmlFor="command-search">
-            Search commands
+            Search workspace
           </label>
           <input
             id="command-search"
@@ -294,7 +319,7 @@ export default function App() {
                 openHiddenCommand(searchResults[0].page);
               }
             }}
-            placeholder="Type shutdown"
+            placeholder="Search storage, usage, access"
           />
           {searchResults.length > 0 && (
             <div className="search-results">
@@ -321,7 +346,7 @@ export default function App() {
           </button>
           {page === "shutdown" && (
             <button className="nav-item active" onClick={() => setPage("shutdown")}>
-              Shutdown
+              Review
             </button>
           )}
         </nav>
@@ -345,11 +370,11 @@ export default function App() {
       <main className="main">
         <header className="page-header">
           <div>
-            <div className="eyebrow">System state</div>
-            <h1>{page === "overview" ? "Overview" : "Shutdown control"}</h1>
+            <div className="eyebrow">Workspace status</div>
+            <h1>{page === "overview" ? "Overview" : "Access review"}</h1>
           </div>
           <div className={`status-pill ${overview?.shutdown.shutdownActive ? "danger" : "safe"}`}>
-            {overview?.shutdown.shutdownActive ? "Shutdown active" : "System available"}
+            {overview?.shutdown.shutdownActive ? "Access limited" : "Normal access"}
           </div>
         </header>
 
@@ -358,12 +383,12 @@ export default function App() {
         {page === "overview" && overview && (
           <section className="page-grid">
             <div className="hero-card">
-              <div className="eyebrow">Main app</div>
-              <h2>{overview.shutdown.shutdownActive ? "Traffic blocked" : "Traffic open"}</h2>
+              <div className="eyebrow">Workspace access</div>
+              <h2>{overview.shutdown.shutdownActive ? "Access is limited" : "Access is normal"}</h2>
               <p>
                 {overview.shutdown.shutdownActive
-                  ? "The main gateway is blocking all normal traffic. Use the shutdown page to restore access."
-                  : "The main gateway is accepting normal traffic. Search for shutdown to open the hidden control page."}
+                  ? "An internal access policy is active. Use the review panel to return the workspace to normal access."
+                  : "Workspace activity is available. Use search to open internal workspace settings when needed."}
               </p>
             </div>
 
@@ -391,14 +416,14 @@ export default function App() {
             </div>
 
             <div className="panel">
-              <div className="panel-title">Shutdown state</div>
+              <div className="panel-title">Policy state</div>
               <div className="state-row">
                 <span>Status</span>
-                <strong>{overview.shutdown.shutdownActive ? "Active" : "Inactive"}</strong>
+                <strong>{overview.shutdown.shutdownActive ? "Limited" : "Normal"}</strong>
               </div>
               <div className="state-row">
-                <span>Reason</span>
-                <strong>{overview.shutdown.shutdownReason ?? "Not active"}</strong>
+                <span>Internal note</span>
+                <strong>{overview.shutdown.shutdownReason ?? "No active note"}</strong>
               </div>
               <div className="state-row">
                 <span>Changed at</span>
@@ -411,15 +436,15 @@ export default function App() {
             </div>
 
             <div className="panel">
-              <div className="panel-title">Recent emergency actions</div>
+              <div className="panel-title">Recent access updates</div>
               {overview.recentEvents.length === 0 ? (
-                <div className="empty">No emergency actions have been recorded yet.</div>
+                <div className="empty">No access updates have been recorded yet.</div>
               ) : (
                 <div className="event-list">
                   {overview.recentEvents.map((event) => (
                     <div className="event-row" key={event.id}>
                       <div>
-                        <strong>{event.action.replace("emergency.shutdown.", "")}</strong>
+                        <strong>{formatEventAction(event.action)}</strong>
                         <small>{event.actorEmail ?? "Unknown actor"}</small>
                       </div>
                       <span>{formatDateTime(event.createdAt)}</span>
@@ -434,18 +459,17 @@ export default function App() {
         {page === "shutdown" && overview && (
           <section className="shutdown-layout">
             <div className="panel danger-panel">
-              <div className="panel-title">Emergency shutdown</div>
+              <div className="panel-title">Workspace policy</div>
               <p className="panel-copy">
-                This control blocks the main Secure Storage gateway for everyone, including admin users.
-                Only this separate control console stays available for recovery.
+                Apply or clear the internal access policy for the main workspace from this panel.
               </p>
 
               <label className="field">
-                <span>Reason</span>
+                <span>Internal note</span>
                 <textarea
                   value={reason}
                   onChange={(event) => setReason(event.target.value)}
-                  placeholder="Explain why the system is being disabled."
+                  placeholder="Add a short note for this change."
                   rows={4}
                 />
               </label>
@@ -456,14 +480,14 @@ export default function App() {
                   onClick={activate}
                   disabled={actionBusy || overview.shutdown.shutdownActive}
                 >
-                  {actionBusy ? "Applying..." : "Activate shutdown"}
+                  {actionBusy ? "Applying..." : "Limit access"}
                 </button>
                 <button
                   className="primary-button secondary"
                   onClick={deactivate}
                   disabled={actionBusy || !overview.shutdown.shutdownActive}
                 >
-                  {actionBusy ? "Applying..." : "Restore system"}
+                  {actionBusy ? "Applying..." : "Restore access"}
                 </button>
               </div>
             </div>
@@ -472,11 +496,11 @@ export default function App() {
               <div className="panel-title">Current state</div>
               <div className="state-row">
                 <span>Status</span>
-                <strong>{overview.shutdown.shutdownActive ? "Active" : "Inactive"}</strong>
+                <strong>{overview.shutdown.shutdownActive ? "Limited" : "Normal"}</strong>
               </div>
               <div className="state-row">
-                <span>Reason</span>
-                <strong>{overview.shutdown.shutdownReason ?? "Not active"}</strong>
+                <span>Internal note</span>
+                <strong>{overview.shutdown.shutdownReason ?? "No active note"}</strong>
               </div>
               <div className="state-row">
                 <span>Started</span>
@@ -487,7 +511,7 @@ export default function App() {
                 <strong>{formatDateTime(overview.shutdown.updatedAt)}</strong>
               </div>
               <div className="state-row">
-                <span>Actor</span>
+                <span>Changed by</span>
                 <strong>{overview.shutdown.shutdownBy?.email ?? "Unknown"}</strong>
               </div>
             </div>

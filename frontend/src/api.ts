@@ -69,16 +69,16 @@ const toErrorMessage = (data: any, fallback: string) => {
     return "This account is currently disabled.";
   }
   if (data?.error === "forbidden") {
-    return "This account does not have emergency access.";
+    return "This account does not have access to this workspace.";
   }
   if (data?.error === "reason_required") {
-    return "A reason is required before activating shutdown.";
+    return "Add a short internal note before saving this change.";
   }
   if (data?.error === "system_shutdown_active") {
-    return data?.message ?? "The main system is currently disabled.";
+    return data?.message ?? "Access is currently limited.";
   }
   if (data?.error === "emergency_shutdown_unavailable") {
-    return "Emergency shutdown controls are unavailable until the latest migration is applied.";
+    return "This workspace panel is temporarily unavailable until the latest setup is applied.";
   }
   if (data?.message) {
     return data.message;
